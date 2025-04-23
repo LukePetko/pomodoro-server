@@ -1,0 +1,6 @@
+{
+    "short_break_time": 300,
+    "long_break_time": 1200,
+    "work_time": 1500,
+    "number_of_sessions": 4
+}
