@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+    "net/http"
+    "log"
 
 	config "github.com/lukepetko/pomodoro-server/internal/config"
 	mqtt "github.com/lukepetko/pomodoro-server/internal/mqtt"
 	"github.com/lukepetko/pomodoro-server/internal/timer"
+    "github.com/lukepetko/pomodoro-server/internal/api"
     "github.com/joho/godotenv"
 )
 
@@ -34,8 +37,9 @@ func main() {
 
     timer := timer.New(config.WorkTime)
 
-    timer.Start()
+    srv := api.NewServer(timer)
 
-    <-timer.Done()
+    fmt.Println("Server started at port 8080!")
+    log.Fatal(http.ListenAndServe(":8080", srv.Routes()))
 }
 
