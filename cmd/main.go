@@ -35,7 +35,8 @@ func main() {
         return
     }
 
-    timer := timer.New(config.WorkTime)
+    timer := timer.New(config)
+    timer.StartProcess()
 
     srv := api.NewServer(timer)
 
