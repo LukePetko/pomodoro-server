@@ -1,76 +1,87 @@
 package api
 
 import (
-    "encoding/json"
-    "net/http"
-    "fmt"
+	"encoding/json"
+	"fmt"
+	"github.com/lukepetko/pomodoro-server/internal/config"
 	"github.com/lukepetko/pomodoro-server/internal/timer"
-    "github.com/lukepetko/pomodoro-server/internal/config"
+	"net/http"
 )
 
 type Server struct {
-    timer *timer.Timer
-    config *config.Config
+	timer  *timer.Timer
+	config *config.Config
 }
 
 func NewServer(timer *timer.Timer, config *config.Config) *Server {
-    return &Server{
-        timer: timer,
-        config: config,
-    }
+	return &Server{
+		timer:  timer,
+		config: config,
+	}
 }
 
 func (s *Server) StartTimer(w http.ResponseWriter, r *http.Request) {
-    s.timer.Start()
-    w.Write([]byte("Timer started"))
+	s.timer.Start()
+	w.Write([]byte("Timer started"))
 }
 
 func (s *Server) StopTimer(w http.ResponseWriter, r *http.Request) {
-    s.timer.Stop()
-    w.Write([]byte("Timer stopped"))
+	s.timer.Stop()
+	w.Write([]byte("Timer stopped"))
 }
 
 func (s *Server) RestartTimer(w http.ResponseWriter, r *http.Request) {
-    s.timer.Restart()
-    w.Write([]byte("Timer restarted"))
+	s.timer.Restart()
+	w.Write([]byte("Timer restarted"))
+}
+
+func (s *Server) Status(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	state := s.timer.Status()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(state)
 }
 
 func (s *Server) SaveConfig(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
-        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-        return
-    }
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-    fmt.Println("Saving config")
+	fmt.Println("Saving config")
 
-    var newCfg config.Config
-    if err := json.NewDecoder(r.Body).Decode(&newCfg); err != nil {
-        http.Error(w, "Invalid JSON", http.StatusBadRequest)
-        return
-    }
+	var newCfg config.Config
+	if err := json.NewDecoder(r.Body).Decode(&newCfg); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
 
-    fmt.Println(newCfg)
+	fmt.Println(newCfg)
 
-    if err := config.SaveConfig("config.json", &newCfg); err != nil {
-        http.Error(w, "Failed to save config", http.StatusInternalServerError)
-        return
-    }
+	if err := config.SaveConfig("config.json", &newCfg); err != nil {
+		http.Error(w, "Failed to save config", http.StatusInternalServerError)
+		return
+	}
 
-    *s.config = newCfg
-    s.timer.Restart()
+	*s.config = newCfg
+	s.timer.Restart()
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{"message": "Config updated and saved"})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Config updated and saved"})
 }
 
-
 func (s *Server) Routes() http.Handler {
-    mux := http.NewServeMux()
+	mux := http.NewServeMux()
 
-    mux.HandleFunc("/start", s.StartTimer)
-    mux.HandleFunc("/stop", s.StopTimer)
-    mux.HandleFunc("/restart", s.RestartTimer)
-    mux.HandleFunc("/config", s.SaveConfig)
+	mux.HandleFunc("/start", s.StartTimer)
+	mux.HandleFunc("/stop", s.StopTimer)
+	mux.HandleFunc("/restart", s.RestartTimer)
+	mux.HandleFunc("/config", s.SaveConfig)
+    mux.HandleFunc("/status", s.Status)
 
-    return mux
+	return mux
 }

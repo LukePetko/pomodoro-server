@@ -28,6 +28,14 @@ type SessionMessage struct {
     EventType     string `json:"event_type"`
 }
 
+type TimerState struct {
+	Duration  int
+	Remaining int
+	Session   int
+	Sessions  []int
+    Running   bool
+}
+
 func New(config *config.Config) *Timer {
     var sessions []int
     for i := 0; i < config.NumberOfSessions; i++ {
@@ -126,6 +134,19 @@ func (t *Timer) Restart() {
     t.session = 0
     t.remaining = t.sessions[t.session]
     t.lock.Unlock()
+}
+
+func (t *Timer) Status() TimerState {
+    t.lock.Lock()
+	defer t.lock.Unlock()
+
+	return TimerState{
+		Duration:  t.duration,
+		Remaining: t.remaining,
+		Session:   t.session,
+		Sessions:  t.sessions,
+        Running:   t.running,
+	}
 }
 
 func (t *Timer) Done() <-chan bool {
