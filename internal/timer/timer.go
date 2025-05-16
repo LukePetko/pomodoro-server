@@ -87,9 +87,9 @@ func (t *Timer) StartProcess() {
                 }
                 jsonPayload, _ := json.Marshal(payload)
                 mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
-                t.lock.Unlock()
-                t.doneChan <- true
-                return
+                t.session = 0
+                t.remaining = t.sessions[t.session]
+                t.running = false
             }
             t.lock.Unlock()
         }
@@ -119,6 +119,13 @@ func (t *Timer) Stop() {
 	go func() {
 		t.stopChan <- true
 	}()
+}
+
+func (t *Timer) Restart() {
+    t.lock.Lock()
+    t.session = 0
+    t.remaining = t.sessions[t.session]
+    t.lock.Unlock()
 }
 
 func (t *Timer) Done() <-chan bool {
