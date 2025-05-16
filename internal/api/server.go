@@ -1,17 +1,22 @@
 package api
 
 import (
+    "encoding/json"
     "net/http"
+    "fmt"
 	"github.com/lukepetko/pomodoro-server/internal/timer"
+    "github.com/lukepetko/pomodoro-server/internal/config"
 )
 
 type Server struct {
     timer *timer.Timer
+    config *config.Config
 }
 
-func NewServer(timer *timer.Timer) *Server {
+func NewServer(timer *timer.Timer, config *config.Config) *Server {
     return &Server{
         timer: timer,
+        config: config,
     }
 }
 
@@ -30,12 +35,42 @@ func (s *Server) RestartTimer(w http.ResponseWriter, r *http.Request) {
     w.Write([]byte("Timer restarted"))
 }
 
+func (s *Server) SaveConfig(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    fmt.Println("Saving config")
+
+    var newCfg config.Config
+    if err := json.NewDecoder(r.Body).Decode(&newCfg); err != nil {
+        http.Error(w, "Invalid JSON", http.StatusBadRequest)
+        return
+    }
+
+    fmt.Println(newCfg)
+
+    if err := config.SaveConfig("config.json", &newCfg); err != nil {
+        http.Error(w, "Failed to save config", http.StatusInternalServerError)
+        return
+    }
+
+    *s.config = newCfg
+    s.timer.Restart()
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"message": "Config updated and saved"})
+}
+
+
 func (s *Server) Routes() http.Handler {
     mux := http.NewServeMux()
 
     mux.HandleFunc("/start", s.StartTimer)
     mux.HandleFunc("/stop", s.StopTimer)
     mux.HandleFunc("/restart", s.RestartTimer)
+    mux.HandleFunc("/config", s.SaveConfig)
 
     return mux
 }

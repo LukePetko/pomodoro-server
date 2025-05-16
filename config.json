@@ -1,6 +1,1 @@
-{
-    "short_break_time": 3,
-    "long_break_time": 4,
-    "work_time": 5,
-    "number_of_sessions": 4
-}
+{"short_break_time":300,"long_break_time":900,"work_time":1500,"number_of_sessions":4}

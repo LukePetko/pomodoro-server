@@ -38,7 +38,7 @@ func main() {
     timer := timer.New(config)
     timer.StartProcess()
 
-    srv := api.NewServer(timer)
+    srv := api.NewServer(timer, config)
 
     fmt.Println("Server started at port 8080!")
     log.Fatal(http.ListenAndServe(":8080", srv.Routes()))

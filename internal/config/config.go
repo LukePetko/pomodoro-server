@@ -3,6 +3,7 @@ package config
 import (
     "encoding/json"
     "os"
+    "fmt"
 )
 
 type Config struct {
@@ -29,16 +30,47 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func SaveConfig(path string, config *Config) error {
+    base, err := LoadConfig(path)
+    fmt.Println(base)
+
+    if err != nil {
+        return err
+    }
+
     file, err := os.Create(path)
+
     if err != nil {
         return err
     }
     defer file.Close()
 
+    base = PatchConfig(base, config)
+    fmt.Println(base)
+
     encoder := json.NewEncoder(file)
-    if err := encoder.Encode(config); err != nil {
+    if err := encoder.Encode(base); err != nil {
         return err
     }
 
     return nil
+}
+
+func PatchConfig(base *Config, partial *Config) *Config {
+    if (partial.ShortBreakTime != 0) {
+        base.ShortBreakTime = partial.ShortBreakTime
+    }
+
+    if (partial.LongBreakTime != 0) {
+        base.LongBreakTime = partial.LongBreakTime
+    }
+
+    if (partial.WorkTime != 0) {
+        base.WorkTime = partial.WorkTime
+    }
+
+    if (partial.NumberOfSessions != 0) {
+        base.NumberOfSessions = partial.NumberOfSessions
+    }
+
+    return base 
 }
