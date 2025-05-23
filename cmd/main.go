@@ -40,7 +40,7 @@ func main() {
 
     srv := api.NewServer(timer, config)
 
-    fmt.Println("Server started at port 8080!")
-    log.Fatal(http.ListenAndServe(":8080", srv.Routes()))
+    fmt.Println("Server started at port 9200!")
+    log.Fatal(http.ListenAndServe(":9200", srv.Routes()))
 }
 

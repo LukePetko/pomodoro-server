@@ -26,6 +26,7 @@ type SessionMessage struct {
     SessionNumber int    `json:"session_number"`
     TimerType     string `json:"timer_type"`
     EventType     string `json:"event_type"`
+    Running       bool   `json:"running"`
 }
 
 type TimerState struct {
@@ -92,6 +93,7 @@ func (t *Timer) StartProcess() {
                     SessionNumber: t.session / 2,
                     TimerType:     "long_break",
                     EventType:     "end",
+                    Running:       t.running,
                 }
                 jsonPayload, _ := json.Marshal(payload)
                 mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))

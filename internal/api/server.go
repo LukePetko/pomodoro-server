@@ -6,6 +6,8 @@ import (
 	"github.com/lukepetko/pomodoro-server/internal/config"
 	"github.com/lukepetko/pomodoro-server/internal/timer"
 	"net/http"
+
+	mqtt "github.com/lukepetko/pomodoro-server/internal/mqtt"
 )
 
 type Server struct {
@@ -22,16 +24,40 @@ func NewServer(timer *timer.Timer, config *config.Config) *Server {
 
 func (s *Server) StartTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Start()
+	payload := timer.SessionMessage{
+		SessionNumber: s.timer.Status().Session / 2,
+		TimerType:     "long_break",
+		EventType:     "end",
+		Running:       s.timer.Status().Running,
+	}
+	jsonPayload, _ := json.Marshal(payload)
+	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
 	w.Write([]byte("Timer started"))
 }
 
 func (s *Server) StopTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Stop()
+	payload := timer.SessionMessage{
+		SessionNumber: s.timer.Status().Session / 2,
+		TimerType:     "long_break",
+		EventType:     "end",
+		Running:       s.timer.Status().Running,
+	}
+	jsonPayload, _ := json.Marshal(payload)
+	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
 	w.Write([]byte("Timer stopped"))
 }
 
 func (s *Server) RestartTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Restart()
+	payload := timer.SessionMessage{
+		SessionNumber: s.timer.Status().Session / 2,
+		TimerType:     "long_break",
+		EventType:     "end",
+		Running:       s.timer.Status().Running,
+	}
+	jsonPayload, _ := json.Marshal(payload)
+	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
 	w.Write([]byte("Timer restarted"))
 }
 
@@ -81,7 +107,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/stop", s.StopTimer)
 	mux.HandleFunc("/restart", s.RestartTimer)
 	mux.HandleFunc("/config", s.SaveConfig)
-    mux.HandleFunc("/status", s.Status)
+	mux.HandleFunc("/status", s.Status)
 
 	return mux
 }
