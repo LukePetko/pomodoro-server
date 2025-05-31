@@ -1,0 +1,28 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: pomodoro-server
+  CONTAINER_NAME: pomodoro-server
+  PORT: 9200
+
+build:
+  stage: build
+  script:
+    - docker build -t $IMAGE_NAME .
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+deploy:
+  stage: deploy
+  script:
+    - docker stop $CONTAINER_NAME || true
+    - docker rm $CONTAINER_NAME || true
+    - docker run -d \
+        --name $CONTAINER_NAME \
+        -p $PORT:$PORT \
+        $IMAGE_NAME
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
