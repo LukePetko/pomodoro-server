@@ -10,6 +10,7 @@ variables:
 build:
   stage: build
   script:
+    - echo "$ENV_FILE" > .env
     - docker build -t $IMAGE_NAME .
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -17,12 +18,12 @@ build:
 deploy:
   stage: deploy
   script:
+    - echo "$IMAGE_NAME"
+    - echo "$CONTAINER_NAME"
+    - echo "$PORT"
     - docker stop $CONTAINER_NAME || true
     - docker rm $CONTAINER_NAME || true
-    - docker run -d \
-        --name $CONTAINER_NAME \
-        -p $PORT:$PORT \
-        $IMAGE_NAME
+    - docker run -d --name $CONTAINER_NAME -p $PORT:$PORT --network bridge $IMAGE_NAME 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
