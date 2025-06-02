@@ -29,6 +29,7 @@ func (s *Server) StartTimer(w http.ResponseWriter, r *http.Request) {
 		TimerType:     "long_break",
 		EventType:     "end",
 		Running:       s.timer.Status().Running,
+        Duration:      s.timer.Status().Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
@@ -40,8 +41,9 @@ func (s *Server) StopTimer(w http.ResponseWriter, r *http.Request) {
 	payload := timer.SessionMessage{
 		SessionNumber: s.timer.Status().Session / 2,
 		TimerType:     "long_break",
-		EventType:     "end",
+		EventType:     "stop",
 		Running:       s.timer.Status().Running,
+        Duration:      s.timer.Status().Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
@@ -52,9 +54,10 @@ func (s *Server) RestartTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Restart()
 	payload := timer.SessionMessage{
 		SessionNumber: s.timer.Status().Session / 2,
-		TimerType:     "long_break",
-		EventType:     "end",
+		TimerType:     "work",
+		EventType:     "restart",
 		Running:       s.timer.Status().Running,
+        Duration:      s.timer.Status().Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
