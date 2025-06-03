@@ -38,6 +38,16 @@ type TimerState struct {
     Running   bool
 }
 
+func GetTimerType(session int, sessions []int) string {
+    if session % 2 == 0 {
+        return "work"
+    } else if session == len(sessions) - 1 {
+        return "long_break"
+    } else {
+        return "short_break"
+    }
+}
+
 func New(config *config.Config) *Timer {
     var sessions []int
     for i := 0; i < config.NumberOfSessions; i++ {
@@ -72,17 +82,9 @@ func (t *Timer) StartProcess() {
             }
             if t.remaining <= 0 && t.session < len(t.sessions) - 1 {
                 fmt.Println("Session complete " + strconv.Itoa(t.session) + " remaining " + strconv.Itoa(t.remaining))
-                var timerType string
-                if t.session % 2 == 0 {
-                    timerType = "work"
-                } else if t.session == len(t.sessions) - 1 {
-                    timerType = "long_break"
-                } else {
-                    timerType = "short_break"
-                }
                 payload := SessionMessage{
-                    SessionNumber: t.session / 2,
-                    TimerType:     timerType,
+                    SessionNumber: t.session,
+                    TimerType:     GetTimerType(t.session, t.sessions),
                     EventType:     "end",
                     Running:       t.running,
                     Duration:      t.duration,
@@ -91,9 +93,19 @@ func (t *Timer) StartProcess() {
                 mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
                 t.session++
                 t.remaining = t.sessions[t.session]
+                t.duration = t.remaining
+                payload = SessionMessage{
+                    SessionNumber: t.session,
+                    TimerType:     GetTimerType(t.session, t.sessions),
+                    EventType:     "start",
+                    Running:       t.running,
+                    Duration:      t.duration,
+                }
+                jsonPayload, _ = json.Marshal(payload)
+                mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
             } else if t.remaining <= 0 && t.session == len(t.sessions) - 1 {
                 payload := SessionMessage{
-                    SessionNumber: t.session / 2,
+                    SessionNumber: t.session,
                     TimerType:     "long_break",
                     EventType:     "end",
                     Running:       t.running,
@@ -103,6 +115,7 @@ func (t *Timer) StartProcess() {
                 mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
                 t.session = 0
                 t.remaining = t.sessions[t.session]
+                t.duration = t.remaining
                 t.running = false
             }
             t.lock.Unlock()

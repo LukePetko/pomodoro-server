@@ -24,12 +24,13 @@ func NewServer(timer *timer.Timer, config *config.Config) *Server {
 
 func (s *Server) StartTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Start()
+    status := s.timer.Status()
 	payload := timer.SessionMessage{
-		SessionNumber: s.timer.Status().Session / 2,
-		TimerType:     "long_break",
-		EventType:     "end",
-		Running:       s.timer.Status().Running,
-        Duration:      s.timer.Status().Duration,
+        SessionNumber: status.Session,
+        TimerType:     timer.GetTimerType(status.Session, status.Sessions),
+		EventType:     "start",
+        Running:       status.Running,
+        Duration:      status.Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
@@ -38,12 +39,13 @@ func (s *Server) StartTimer(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) StopTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Stop()
+    status := s.timer.Status()
 	payload := timer.SessionMessage{
-		SessionNumber: s.timer.Status().Session / 2,
-		TimerType:     "long_break",
+		SessionNumber: status.Session,
+		TimerType:     timer.GetTimerType(status.Session, status.Sessions),
 		EventType:     "stop",
-		Running:       s.timer.Status().Running,
-        Duration:      s.timer.Status().Duration,
+		Running:       status.Running,
+        Duration:      status.Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
@@ -52,12 +54,13 @@ func (s *Server) StopTimer(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) RestartTimer(w http.ResponseWriter, r *http.Request) {
 	s.timer.Restart()
+    status := s.timer.Status()
 	payload := timer.SessionMessage{
-		SessionNumber: s.timer.Status().Session / 2,
-		TimerType:     "work",
+        SessionNumber: status.Session,
+        TimerType:     timer.GetTimerType(status.Session, status.Sessions),
 		EventType:     "restart",
-		Running:       s.timer.Status().Running,
-        Duration:      s.timer.Status().Duration,
+        Running:       status.Running,
+        Duration:      status.Duration,
 	}
 	jsonPayload, _ := json.Marshal(payload)
 	mqtt.Client.Publish("pomodoro/timer/session", 0, false, string(jsonPayload))
